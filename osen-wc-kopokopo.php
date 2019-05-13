@@ -170,7 +170,7 @@ function kopokopo_init() {
 				'description' 		=> array(
 					'title'			=> __('Checkout Instructions', 'kopokopo'),
 					'type'			=> 'textarea',
-					'desc_tip'		=> __('Payment title of checkout process.', 'kopokopo'),
+					'desc_tip'		=> __('Payment method description that the customer will see on your checkout.', 'kopokopo'),
 					'default'		=> '<p>
 		        ' . __('On your Safaricom phone go the M-PESA menu', 'kopokopo') . '</br>
 		        ' . __('Select Lipa Na M-PESA and then select Buy Goods and Services', 'kopokopo') . '</br>
@@ -179,7 +179,7 @@ function kopokopo_init() {
 		        ' . __('Follow subsequent prompts to complete the transaction.', 'kopokopo') . ' </br>
 		        ' . __('You will receive a confirmation SMS from M-PESA with a Confirmation Code.', 'kopokopo') . ' </br>
 		        ' . __('After you receive the confirmation code, please input your phone number and the confirmation code that you received from M-PESA below.', 'kopokopo') . '</br></p>', 'kopokopo',
-					'css'			=> 'max-width:400px;'
+					'css'			=> 'max-width:100%; height: 200px;'
 				),
 				'instructions' 		=> array(
 					'title'       	=> __('Thank You Instructions', 'woocommerce'),
@@ -201,7 +201,8 @@ function kopokopo_init() {
 		public function payment_fields() {
 
 			// ok, let's display some description before the payment form
-			if ($this->description) {
+			if ($this->description) { 
+				echo 'Till Number: <code>'. $this->get_option('shortcode'); ?></code></br><?php
 				echo wpautop(wp_kses_post($this->description)); ?>
 				<div class="form-row form-row-full">
 					<input required="required" id="misha_expdate" name="reference" type="text" autocomplete="off" placeholder="Enter Code e.g NCE6UUNJS6">

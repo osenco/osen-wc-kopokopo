@@ -45,7 +45,7 @@ function kopokopo_transactions_menu_about()
     <div class="wrap">
         <h1>About KopoKopo for WooCommerce</h1>
 
-        <img src="<?php echo apply_filters('woocommerce_mpesa_icon', plugins_url('KopoKopo.png', __FILE__)); ?>" width="200px">
+        <img src="<?php echo apply_filters('woocommerce_mpesa_icon', plugins_url('KopoKopo.png', __FILE__)); ?>" width="400px">
 
         <h3>The Plugin</h3>
         <article>
@@ -68,7 +68,7 @@ function kopokopo_transactions_menu_about()
         </article>
 
         <h3>Contact</h3>
-        <h4>Get in touch with me ( <a href="https://mauko.co.ke/">Mauko</a> ) either via email ( <a href="mail-to:hi@mauko.co.ke">hi@mauko.co.ke</a> ) or via phone( <a href="tel:+254204404993">+254204404993</a> )</h4>
+        <h4>Get in touch with us either via email ( <a href="mail-to:hi@osen.co.ke">hi@osen.co.ke</a> ) or via phone( <a href="tel:+254204404993">+254204404993</a> )</h4>
         </div><?php
     }
 

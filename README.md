@@ -13,7 +13,7 @@ Navigate to Dashboard > Plugins > Add New then search for KopoKopo . Click insta
 
 Once installed, you can activate the plugin.
 
-## The One Time Password(Reference)
+## Transaction Reference
 ### Phone Number
 The phone number entered must start with a + and the buyer's country's calling code.
 
