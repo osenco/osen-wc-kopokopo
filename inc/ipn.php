@@ -14,38 +14,36 @@ function kopokopo_post_id_by_meta_key_and_value($key, $value) {
 }
 
 add_action( 'init', function() {
-  /** Add a custom path and set a custom query argument. */
   add_rewrite_rule( '^/kopokopo_reconcile', 'index.php?kopokopo_reconcile=1', 'top' );
 } );
 
 add_filter( 'query_vars', function( $query_vars ) {
-    /** Make sure WordPress knows about this custom action. */
     $query_vars []= 'kopokopo_reconcile';
     return $query_vars;
 } );
 
 add_action( 'wp', function() {
-    /** This is an call for our custom action. */
     if ( get_query_var( 'kopokopo_reconcile' ) ) {
         $kopokopo_gateway   = new WC_Kopokopo_Gateway();
-        $shortcode          = $kopokopo_gateway->get_option('kopokopo_shortcode');
-        $api_key            = $kopokopo_gateway->get_option('kopokopo_api_key');
+        $shortcode          = $kopokopo_gateway->get_option('shortcode');
+        $api_key            = $kopokopo_gateway->get_option('api_key');
 
         $response = array(
             "status" => "03" // invalid
         );
 
         // Get all the fields from the post request
-        $input = file_get_contents('php://input');
-        $data = json_decode($input, TRUE);
-        $data = !is_array($data) ? array() : $data;
+        $input      = file_get_contents('php://input');
+        $data       = json_decode($input, TRUE);
+        $data       = !is_array($data) ? array() : $data;
 
-        $signature = isset($data['signature']) ? $data['signature'] : '';
+        $signature  = isset($data['signature']) ? $data['signature'] : '';
         unset($data['signature']);
 
-        // create a Base64 encoded signature using API_KEY as the secret key
-        // the signature is a Base64 encoded HMAC(Hash Message Authentication Code)
-        // Described well in the KopoKopo API documentation     
+        /**
+         * Create a Base64 encoded signature using API_KEY as the secret key
+         * The signature is a Base64 encoded HMAC(Hash Message Authentication Code)
+         */   
         ksort($data);
 
         $b = [];
@@ -71,7 +69,7 @@ add_action( 'wp', function() {
             $currency                   = $data['currency'];
             $account_number             = $data['account_number'];
 
-            // Insert the payment into the database
+            // Get payment by reference and update details
             $post_id = kopokopo_post_id_by_meta_key_and_value('_reference', $transaction_reference);
 
             update_post_meta( $post_id, '_transaction', $internal_transaction_id);
@@ -81,32 +79,26 @@ add_action( 'wp', function() {
             update_post_meta( $post_id, '_phone', $sender_phone);
             update_post_meta( $post_id, '_account_number', $account_number);
 
-            $this_order = wc_get_order(get_post_meta( $post_id, 'order_id', true ));
-            if ($this_order->get_status() == "pending" || $this_order->get_status() == 'on-hold' || $this_order->get_status() == 'failed') {
-                if ((int) $amount >= $this_order->get_total()) {
-                    $this_order->add_order_note(__("FULLY PAID: Payment of $currency $amount from $first_name $middle_name $last_name, phone number $sender_phone and MPESA reference $transaction_reference confirmed by KopoKopo", 'woocommerce'));
-                    $this_order->payment_complete();
-                } else {
-                    $this_order->add_order_note(__("PARTLY PAID: Received $currency $amount from $first_name $middle_name $last_name, phone number $sender_phone and MPESA reference $transaction_reference", 'woocommerce'));
-                }
-
-                $response = array(
-                    "status" => "01",
-                    "description" => "Accepted",
-                    "subscriber_message" => "We have received your payment of " . $amount . " for Order No. " . $record->order_id
-                );
+            $order_id = get_post_meta( $post_id, 'order_id', true );
+            $order = wc_get_order($order_id);
+            
+            if ((int)$amount >= $order->get_total()) {
+                $order->add_order_note(__("FULLY PAID: Payment of $currency $amount from $first_name $middle_name $last_name, phone number $sender_phone and MPESA reference $transaction_reference confirmed by KopoKopo", 'woocommerce'));
+                $order->payment_complete();
             } else {
-                $response = array(
-                    "status" => "01",
-                    "description" => "Accepted",
-                    "subscriber_message" => ""
-                );
+                $order->add_order_note(__("PARTLY PAID: Received $currency $amount from $first_name $middle_name $last_name, phone number $sender_phone and MPESA reference $transaction_reference", 'woocommerce'));
             }
+
+            $response = array(
+                "status"                => "01",
+                "description"           => "Accepted",
+                "subscriber_message"    => "Payment of {$currency} {$amount} for Order {$order_id} to ".getbloginfo('name')." received."
+            );
         } else {
             $response = array(
-                "status" => "02", // Account not found
-                "description" => "Rejected", 
-                "subscriber_message" => "" 
+                "status"                => "02", // Account not found
+                "description"           => "Rejected", 
+                "subscriber_message"    => "" 
             );
         }
 

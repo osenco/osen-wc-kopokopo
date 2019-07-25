@@ -168,7 +168,7 @@ function kopokopo_init() {
 					'desc_tip'		=> __('This is the Shortcode provided by KopoKopo when you signed up for an account.', 'kopokopo'),
 					'default' 		=> '123456'
 				),
-				'apiKey' 			=> array(
+				'api_key' 			=> array(
 					'title'			=> __('KopoKopo API Key', 'kopokopo'),
 					'type'			=> 'text',
 					'desc_tip'		=> __('This is the API Key provided by KopoKopo when you signed up for an account.', 'kopokopo'),
