@@ -5,11 +5,11 @@
  * @author Mauko Maunde < hi@mauko.co.ke >
  * @since 0.19.04
  *
- * Plugin Name: KopoKopo for WordPress
+ * Plugin Name: KopoKopo for WooCommerce
  * Plugin URI:  https://kopokopo.org
  * Description: WordPress Plugin to integrate KopoKopo Payments
  * Version:     0.19.04
- * Author:      Mauko Maunde
+ * Author:      Osen Concepts
  * Author URI:  https://osen.co.ke/
  * License:     GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -70,7 +70,7 @@ function kopokopo_action_links($links)
 		$links, 
 		array(
 			'<a href="'.admin_url('admin.php?page=wc-settings&tab=checkout&section=kopokopo').'">&nbsp;Configure</a>', 
-			'<a href="https://kopokopo.herokuapp.com/kopokopo/swagger-ui.html">&nbsp;API Docs</a>' 
+			'<a href="https://app.kopokopo.com/push_api">&nbsp;API Docs</a>' 
 		)
 	);
 }
@@ -110,7 +110,8 @@ function kopokopo_init() {
                     <li>Set Notification URL to <code><b>'. home_url("kopokopo_reconcile") .'</b></code></li>
                 </ol>
                 <li>Make sure everything is saved</li>
-            </ol>', 'kopokopo');
+            </ol>
+			<p>Copy your API key and paste it below</p>', 'kopokopo');
 
 			// vertical tab title
 			$this->title = __("Lipa Na MPESA", 'kopokopo');
@@ -132,7 +133,7 @@ function kopokopo_init() {
 				$this->$setting_key = $value;
 			}
 
-			$this->shortcode = $this->get_option('shortcode');
+			$this->shortcode = $this->get_option('shortcode', '123456');
 			
 			// Save settings
 			if (is_admin()) {
@@ -142,6 +143,12 @@ function kopokopo_init() {
 
 		// Administration option fields for this Gateway
 		public function init_form_fields() {
+			$shipping_methods = array();
+
+			foreach (WC()->shipping()->load_shipping_methods() as $method){
+				$shipping_methods[ $method->id ] = $method->get_method_title();
+			}
+
 			$this->form_fields = array(
 				'enabled' 			=> array(
 					'title'			=> __('Enable / Disable', 'kopokopo'),
@@ -150,73 +157,101 @@ function kopokopo_init() {
 					'default'		=> 'no',
 				),
 				'title' 			=> array(
-					'title'			=> __('Title', 'kopokopo'),
+					'title'			=> __('Method Title', 'kopokopo'),
 					'type'			=> 'text',
 					'desc_tip'		=> __('Payment title of checkout process.', 'kopokopo'),
-					'default'		=> __('Lipa Na MPESA', 'kopokopo'),
+					'default'		=> __('Lipa Na MPESA(KopoKopo)', 'kopokopo'),
 				),
 				'shortcode' 		=> array(
 					'title'			=> __('KopoKopo Shortcode', 'kopokopo'),
 					'type'			=> 'text',
 					'desc_tip'		=> __('This is the Shortcode provided by KopoKopo when you signed up for an account.', 'kopokopo'),
-					'default' 		=> '06166'
+					'default' 		=> '123456'
 				),
 				'apiKey' 			=> array(
 					'title'			=> __('KopoKopo API Key', 'kopokopo'),
 					'type'			=> 'text',
 					'desc_tip'		=> __('This is the API Key provided by KopoKopo when you signed up for an account.', 'kopokopo'),
-					'default' 		=> 'CANN4N9UGFHH1E7CX41T'
+					'default' 		=> '05a9907dec40e9a24b693a53f04a77e83329048e'
 				),
-				'description' 		=> array(
-					'title'			=> __('Checkout Instructions', 'kopokopo'),
-					'type'			=> 'textarea',
-					'desc_tip'		=> __('Payment method description that the customer will see on your checkout.', 'kopokopo'),
-					'default'		=> '<p>
-		        ' . __('On your Safaricom phone go the M-PESA menu', 'kopokopo') . '</br>
-		        ' . __('Select Lipa Na M-PESA and then select Buy Goods and Services', 'kopokopo') . '</br>
-		        ' . __('Enter the Till Number', 'kopokopo') . ' <strong>' . $this->shortcode . '</strong> </br>
-		        ' . __('Enter exactly the amount due', 'kopokopo') . '</br>
-		        ' . __('Follow subsequent prompts to complete the transaction.', 'kopokopo') . ' </br>
-		        ' . __('You will receive a confirmation SMS from M-PESA with a Confirmation Code.', 'kopokopo') . ' </br>
-		        ' . __('After you receive the confirmation code, please input your phone number and the confirmation code that you received from M-PESA below.', 'kopokopo') . '</br></p>', 'kopokopo',
-					'css'			=> 'max-width:100%; height: 200px;'
+				'enable_for_methods' => array(
+					'title'             => __('Enable for shipping methods', 'woocommerce'),
+					'type'              => 'multiselect',
+					'class'             => 'wc-enhanced-select',
+					'css'               => 'width: 400px;',
+					'default'           => '',
+					'description'       => __('If MPesa is only available for certain methods, set it up here. Leave blank to enable for all methods.', 'woocommerce'),
+					'options'           => $shipping_methods,
+					'desc_tip'          => true,
+					'custom_attributes' => array(
+						'data-placeholder' => __('Select shipping methods', 'woocommerce'),
+					),
 				),
+                'enable_for_virtual' => array(
+                    'title' => __('Accept for virtual orders', 'woocommerce'),
+                    'label' => __('Accept KopoKopo Lipa na MPESA if the order is virtual', 'woocommerce'),
+                    'type' => 'checkbox',
+                    'default' => 'yes'
+                ),
 				'instructions' 		=> array(
 					'title'       	=> __('Thank You Instructions', 'woocommerce'),
 					'type'       	=> 'textarea',
 					'description'	=> __('Instructions that will be added to the thank you page.', 'woocommerce'),
-					'default'     	=> __('Thank you for buying from us. You will receive a confirmation message from KopoKopo shortly.', 'woocommerce'),
+					'default'     	=> __('Thank you for buying from us. You will receive a confirmation message from us shortly.', 'woocommerce'),
 					'desc_tip'    	=> true,
-				)
+				),
 			);		
 		}
 		
 		// Response handled for payment gateway
-		public function process_payment($order_id) {
-			global $woocommerce;
+		public function process_payment($order_id)
+        {
+            $order = wc_get_order($order_id);
+            $order->update_status('pending', __('Waiting to verify MPESA payment.', 'woocommerce'));
+            $order->reduce_order_stock();
+            WC()->cart->empty_cart();
+            $order->add_order_note("Awaiting payment confirmation from " . $_POST['mpesa_phone']);
+            // Insert the payment into the database
+	        
+	        $post_id = wp_insert_post( 
+	            array(
+	                'post_title'    => 'Order '.time(),
+	                'post_status'   => 'publish',
+	                'post_type'     => 'kopokopo_ipn',
+	                'post_author'   => is_user_logged_in() ? get_current_user_id() : 1,
+	            ) 
+	        );
 
+            update_post_meta($post_id, '_order_id', $order_id );
+			update_post_meta($post_id, '_transaction', $order_id );
+            update_post_meta($post_id, '_reference', $_POST['reference']);
+            update_post_meta($post_id, '_amount', round($amount));
 
+            return array(
+                'result' => 'success',
+                'redirect' => $this->get_return_url($order)
+            );
 		}
 
-		public function payment_fields() {
+		public function payment_fields() { ?>
+			<p class="form-row form-row-wide">
+					On your Safaricom phone go the M-PESA menu.<br>
+					Select Lipa Na M-PESA and then select Buy Goods and Services<br>
+					Enter the Till Number <b><?php echo $this->shortcode; ?></b><br>
+					Enter exactly <b><?php echo round(WC()->cart->total); ?></b> as the amount due<br>
+					Follow subsequent prompts to complete the transaction.<br>
+					You will receive a confirmation SMS from M-PESA with a Confirmation Code.<br>
+					Please input the confirmation code below.<br><br>
 
-			// ok, let's display some description before the payment form
-			if ($this->description) { 
-				echo 'Till Number: <code>'. $this->get_option('shortcode'); ?></code></br><?php
-				echo wpautop(wp_kses_post($this->description)); ?>
-				<div class="form-row form-row-full">
-					<input required="required" id="misha_expdate" name="reference" type="text" autocomplete="off" placeholder="Enter Code e.g NCE6UUNJS6">
-				</div>
-				<div class="clear"></div>
-				<?php
-			}
+				<input class="input-text" required="required" name="reference" type="text" autocomplete="off" placeholder="Enter Code e.g NCE6UUNJS6">
+			</p><?php
 		}
 		
 		// Validate OTP
 		public function validate_fields() {
 
 			if(empty($_POST[ 'reference' ])) {
-				wc_add_notice( 'Transaction Code is required!', 'error');
+				wc_add_notice( 'Confirmation Code is required!', 'error');
 				return false;
 			}
 

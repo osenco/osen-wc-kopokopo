@@ -36,20 +36,20 @@ add_action( 'wp', function() {
         );
 
         // Get all the fields from the post request
-        $inputJSON = file_get_contents('php://input');
-        $inputData = json_decode($inputJSON, TRUE);
-        $inputData = !is_array($inputData) ? array() : $inputData;
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, TRUE);
+        $data = !is_array($data) ? array() : $data;
 
-        $signature = isset($inputData['signature']) ? $inputData['signature'] : '';
-        unset($inputData['signature']);
+        $signature = isset($data['signature']) ? $data['signature'] : '';
+        unset($data['signature']);
 
         // create a Base64 encoded signature using API_KEY as the secret key
         // the signature is a Base64 encoded HMAC(Hash Message Authentication Code)
         // Described well in the KopoKopo API documentation     
-        ksort($inputData);
+        ksort($data);
 
         $b = [];
-        foreach ($inputData as $key => $value) {
+        foreach ($data as $key => $value) {
             $b[] = $key.'='.$value;            
         }
         sort($b);
@@ -57,19 +57,19 @@ add_action( 'wp', function() {
         $signature_created = base64_encode(hash_hmac("sha1", $base_string, $api_key, true));
 
         if ($signature_created == $signature) {
-            $service_name               = $inputData['service_name'];
-            $business_number            = $inputData['business_number'];
-            $transaction_reference      = $inputData['transaction_reference'];
-            $internal_transaction_id    = $inputData['internal_transaction_id'];
-            $transaction_timestamp      = $inputData['transaction_timestamp'];
-            $transaction_type           = $inputData['transaction_type'];
-            $amount                     = $inputData['amount'];
-            $first_name                 = $inputData['first_name'];
-            $last_name                  = $inputData['last_name'];
-            $middle_name                = $inputData['middle_name'];
-            $sender_phone               = $inputData['sender_phone'];
-            $currency                   = $inputData['currency'];
-            $account_number             = $inputData['account_number'];
+            $service_name               = $data['service_name'];
+            $business_number            = $data['business_number'];
+            $transaction_reference      = $data['transaction_reference'];
+            $internal_transaction_id    = $data['internal_transaction_id'];
+            $transaction_timestamp      = $data['transaction_timestamp'];
+            $transaction_type           = $data['transaction_type'];
+            $amount                     = $data['amount'];
+            $first_name                 = $data['first_name'];
+            $last_name                  = $data['last_name'];
+            $middle_name                = $data['middle_name'];
+            $sender_phone               = $data['sender_phone'];
+            $currency                   = $data['currency'];
+            $account_number             = $data['account_number'];
 
             // Insert the payment into the database
             $post_id = kopokopo_post_id_by_meta_key_and_value('_reference', $transaction_reference);

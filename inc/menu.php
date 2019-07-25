@@ -49,7 +49,7 @@ function kopokopo_transactions_menu_about()
 
         <h3>The Plugin</h3>
         <article>
-            <p>This plugin builds on the work of <a href="https://github.com/moshthepitt/woocommerce-lipa-na-mmpesa">Kelvin Jayanoris</a>, the <a href="https://osen.co.ke">Osen Concepts </a> developers and others to provide a simple plug-n-play implementation for integrating MPesa Payments processed by KopoKopo into online stores built with WooCommerce and WordPress.</p>
+            <p>This plugin aims to provide a simple plug-n-play implementation for integrating MPesa Payments processed by KopoKopo into online stores built with WooCommerce and WordPress.</p>
         </article>
 
         <h3>Integration</h3>
@@ -64,7 +64,8 @@ function kopokopo_transactions_menu_about()
                     <li>Set Notification URL to <code><b>'. home_url("kopokopo_reconcile") .'</b></code></li>
                 </ol>
                 <li>Make sure everything is saved</li>
-            </ol>', 'kopokopo'); ?>
+            </ol>
+            <p>Copy your API key and paste it on the <a href="'.admin_url('admin.php?page=wc-settings&tab=checkout&section=kopokopo').'">settings page</a></p>', 'kopokopo'); ?>
         </article>
 
         <h3>Contact</h3>
