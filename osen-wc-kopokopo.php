@@ -7,8 +7,8 @@
  *
  * Plugin Name: KopoKopo for WooCommerce
  * Plugin URI:  https://kopokopo.org
- * Description: WordPress Plugin to integrate KopoKopo Payments
- * Version:     0.19.04
+ * Description: This plugin extends WordPress and WooCommerce functionality to integrate Lipa Na MPesa by Kopokopo for making and receiving online payments.
+ * Version:     0.19.07
  * Author:      Osen Concepts
  * Author URI:  https://osen.co.ke/
  * License:     GPL2
@@ -210,7 +210,7 @@ function kopokopo_init() {
             $order->update_status('pending', __('Waiting to verify MPESA payment.', 'woocommerce'));
             $order->reduce_order_stock();
             WC()->cart->empty_cart();
-            $order->add_order_note("Awaiting payment confirmation from " . $_POST['mpesa_phone']);
+            $order->add_order_note("Awaiting payment confirmation from Kopokopo");
             // Insert the payment into the database
 	        
 	        $post_id = wp_insert_post( 

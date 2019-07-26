@@ -97,7 +97,7 @@ function filter_kopokopo_payments_table_columns( $columns )
  * @param String $column The name of the column being acted upon
  * @return void
  */
-add_action( 'manage_posts_custom_column','kopokopo_payments_table_column_content', 10, 2 );
+add_action( 'manage_kopokopo_ipn_posts_custom_column','kopokopo_payments_table_column_content', 10, 2 );
 function kopokopo_payments_table_column_content( $column_id, $post_id )
 {
 	$order_id = get_post_meta( $post_id, '_order_id', true );
