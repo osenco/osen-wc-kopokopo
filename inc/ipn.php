@@ -96,9 +96,9 @@ add_action( 'wp', function() {
             );
         } else {
             $response = array(
-                "status"                => "02", // Account not found
+                "status"                => "02",
                 "description"           => "Rejected", 
-                "subscriber_message"    => "" 
+                "subscriber_message"    => "Account not found" 
             );
         }
 

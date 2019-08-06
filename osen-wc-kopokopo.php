@@ -154,7 +154,7 @@ function kopokopo_init() {
 
 			$this->form_fields = array(
 				'enabled' 			=> array(
-					'title'			=> __('Enable / Disable', 'kopokopo'),
+					'title'			=> __('Enable/Disable', 'kopokopo'),
 					'label'			=> __('Enable this payment gateway', 'kopokopo'),
 					'type'			=> 'checkbox',
 					'default'		=> 'no',
@@ -166,15 +166,15 @@ function kopokopo_init() {
 					'default'		=> __('Lipa Na MPESA(KopoKopo)', 'kopokopo'),
 				),
 				'shortcode' 		=> array(
-					'title'			=> __('KopoKopo Shortcode', 'kopokopo'),
+					'title'			=> __('KopoKopo Till Number', 'kopokopo'),
 					'type'			=> 'text',
-					'desc_tip'		=> __('This is the Shortcode provided by KopoKopo when you signed up for an account.', 'kopokopo'),
+					'desc_tip'		=> __('This is the Till number provided by KopoKopo when you signed up for an account.', 'kopokopo'),
 					'default' 		=> '123456'
 				),
 				'api_key' 			=> array(
 					'title'			=> __('KopoKopo API Key', 'kopokopo'),
 					'type'			=> 'text',
-					'desc_tip'		=> __('This is the API Key provided by KopoKopo when you signed up for an account.', 'kopokopo'),
+					'desc_tip'		=> __('This is the API Key provided by KopoKopo from your account dashboard.', 'kopokopo'),
 					'default' 		=> '05a9907dec40e9a24b693a53f04a77e83329048e'
 				),
 				'enable_for_methods' => array(
