@@ -13,24 +13,24 @@ function kopokopo_post_id_by_meta_key_and_value($key, $value) {
     }
 }
 
-add_action( 'init', function() {
-  add_rewrite_rule( '^/kopokopo_reconcile', 'index.php?kopokopo_reconcile=1', 'top' );
-} );
+add_action('init', function() {
+  add_rewrite_rule('^/kopokopo_reconcile', 'index.php?kopokopo_reconcile=1', 'top');
+});
 
-add_filter( 'query_vars', function( $query_vars ) {
+add_filter('query_vars', function($query_vars) {
     $query_vars []= 'kopokopo_reconcile';
     return $query_vars;
-} );
+});
 
-add_action( 'wp', function() {
-    if ( get_query_var( 'kopokopo_reconcile' ) ) {
+add_action('wp', function() {
+    if (get_query_var('kopokopo_reconcile')) {
         $kopokopo_gateway   = new WC_Kopokopo_Gateway();
         $shortcode          = $kopokopo_gateway->get_option('shortcode');
         $api_key            = $kopokopo_gateway->get_option('api_key');
 
         $response = array(
             "status" => "03" // invalid
-        );
+       );
 
         // Get all the fields from the post request
         $input      = file_get_contents('php://input');
@@ -72,14 +72,14 @@ add_action( 'wp', function() {
             // Get payment by reference and update details
             $post_id = kopokopo_post_id_by_meta_key_and_value('_reference', $transaction_reference);
 
-            update_post_meta( $post_id, '_transaction', $internal_transaction_id);
-            update_post_meta( $post_id, '_timestamp', $transaction_timestamp);
-            update_post_meta( $post_id, '_amount', $amount);
-            update_post_meta( $post_id, '_customer', $first_name.' '.$middle_name.' '.$last_name);
-            update_post_meta( $post_id, '_phone', $sender_phone);
-            update_post_meta( $post_id, '_account_number', $account_number);
+            update_post_meta($post_id, '_transaction', $internal_transaction_id);
+            update_post_meta($post_id, '_timestamp', $transaction_timestamp);
+            update_post_meta($post_id, '_amount', $amount);
+            update_post_meta($post_id, '_customer', $first_name.' '.$middle_name.' '.$last_name);
+            update_post_meta($post_id, '_phone', $sender_phone);
+            update_post_meta($post_id, '_account_number', $account_number);
 
-            $order_id = get_post_meta( $post_id, 'order_id', true );
+            $order_id = get_post_meta($post_id, 'order_id', true);
             $order = wc_get_order($order_id);
             
             if ((int)$amount >= $order->get_total()) {
@@ -92,16 +92,16 @@ add_action( 'wp', function() {
             $response = array(
                 "status"                => "01",
                 "description"           => "Accepted",
-                "subscriber_message"    => "Payment of {$currency} {$amount} for Order {$order_id} to ".getbloginfo('name')." received."
-            );
+                "subscriber_message"    => "Payment of {$currency} {$amount} for Order #{$order_id} to ".getbloginfo('name')." received."
+           );
         } else {
             $response = array(
                 "status"                => "02",
                 "description"           => "Rejected", 
                 "subscriber_message"    => "Account not found" 
-            );
+           );
         }
 
         exit(wp_send_json($response));
     }
-} );
+});

@@ -7,27 +7,26 @@
  */
 
 // Add admin menus for plugin actions
-add_action( 'admin_menu', 'kopokopo_transactions_menu' );
+add_action('admin_menu', 'kopokopo_transactions_menu');
 function kopokopo_transactions_menu()
 {
-
-    add_submenu_page( 
+    add_submenu_page(
         'edit.php?post_type=kopokopo_ipn', 
         'About this Plugin', 
         'About Plugin', 
         'manage_options',
         'kopokopo_about', 
         'kopokopo_transactions_menu_about' 
-    );
+   );
 
-    // add_submenu_page( 
+    // add_submenu_page(
     //     'kopokopokopokopo', 
     //     'KopoKopo Payments Analytics', 
     //     'Analytics', 
     //     'manage_options',
     //     'kopokopo_analytics', 
     //     'kopokopo_transactions_menu_analytics' 
-    // );
+    //);
 
     add_submenu_page(
         'edit.php?post_type=kopokopo_ipn', 
@@ -36,7 +35,7 @@ function kopokopo_transactions_menu()
         'manage_options', 
         'kopokopo_options',
         'kopokopo_transactions_menu_pref'
-    );
+   );
 }
 
 // About plugin
@@ -45,11 +44,11 @@ function kopokopo_transactions_menu_about()
     <div class="wrap">
         <h1>About KopoKopo for WooCommerce</h1>
 
-        <img src="<?php echo apply_filters('woocommerce_mpesa_icon', plugins_url('KopoKopo.png', __FILE__)); ?>" width="400px">
+        <img src="<?php echo apply_filters('woocommerce_mpesa_icon', plugins_url('KopoKopo.png', __FILE__)); ?>" width="100px">
 
         <h3>The Plugin</h3>
         <article>
-            <p>This plugin aims to provide a simple plug-n-play implementation for integrating MPesa Payments processed by KopoKopo into online stores built with WooCommerce and WordPress.</p>
+            <p>This plugin aims to provide a simple plug-n-play implementation for integrating M-PESA Payments processed by KopoKopo into online stores built with WooCommerce and WordPress.</p>
         </article>
 
         <h3>Integration</h3>
@@ -69,12 +68,16 @@ function kopokopo_transactions_menu_about()
         </article>
 
         <h3>Contact</h3>
-        <h4>Get in touch with us either via email ( <a href="mail-to:hi@osen.co.ke">hi@osen.co.ke</a> ) or via phone( <a href="tel:+254204404993">+254204404993</a> )</h4>
-        </div><?php
-    }
+        <h4>Get in touch with us either via email (<a href="mail-to:hi@osen.co.ke">hi@osen.co.ke</a>) or via phone(<a href="tel:+254204404993">+254204404993</a>)</h4>
+    </div><?php
+}
 
 // Redirect to plugin configuration page
-    function kopokopo_transactions_menu_pref()
-    {
-        wp_redirect( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=kopokopo' ) );
-    }
+function kopokopo_transactions_menu_pref()
+{
+    wp_redirect(
+        admin_url(
+            'admin.php?page=wc-settings&tab=checkout&section=kopokopo'
+        )
+    );
+}

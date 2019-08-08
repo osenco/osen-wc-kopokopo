@@ -3,11 +3,11 @@
  * @package KopoKopo For WooCommerce
  * @subpackage Plugin File
  * @author Mauko Maunde < hi@mauko.co.ke >
- * @since 0.19.04
+ * @since 0.19.08
  *
  * Plugin Name: KopoKopo for WooCommerce
  * Plugin URI:  https://kopokopo.org
- * Description: This plugin extends WordPress and WooCommerce functionality to integrate Lipa Na MPesa by Kopokopo for making and receiving online payments.
+ * Description: This plugin extends WordPress and WooCommerce functionality to integrate Lipa Na M-PESA by Kopokopo for making and receiving online payments.
  * Version:     0.19.07
  * Author:      Osen Concepts
  * Author URI:  https://osen.co.ke/
@@ -26,7 +26,7 @@ if (!defined('ABSPATH')){
 }
 
 // Define plugin constants
-define('KP_VER', '1.19.0');
+define('KP_VER', '1.19.08');
 if (!defined('KP_PLUGIN_FILE')) {
 	define('KP_PLUGIN_FILE', __FILE__);
 }
@@ -35,6 +35,10 @@ if (!defined('KP_PLUGIN_FILE')) {
 register_activation_hook(__FILE__, 'wc_kopokopo_activation_check');
 function wc_kopokopo_activation_check() 
 {
+	if (! get_option('wc_kopokopo_flush_rewrite_rules_flag')) {
+		add_option('wc_kopokopo_flush_rewrite_rules_flag', true);
+	}
+
 	if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')))){
 		deactivate_plugins(plugin_basename(__FILE__));
 		exit('Please Install/Activate WooCommerce for the KopoKopo extension to work');
@@ -43,6 +47,14 @@ function wc_kopokopo_activation_check()
 	if (!is_plugin_active('woocommerce/woocommerce.php')){
 		deactivate_plugins(plugin_basename(__FILE__));
 	}
+}
+
+add_action('init', 'wc_kopokopo_flush_rewrite_rules_maybe', 20);
+function wc_kopokopo_flush_rewrite_rules_maybe() {
+    if (get_option('wc_kopokopo_flush_rewrite_rules_flag')) {
+        flush_rewrite_rules();
+        delete_option('wc_kopokopo_flush_rewrite_rules_flag');
+    }
 }
 
 // Redirect to configuration page when activated
@@ -183,7 +195,7 @@ function kopokopo_init() {
 					'class'             => 'wc-enhanced-select',
 					'css'               => 'width: 400px;',
 					'default'           => '',
-					'description'       => __('If MPesa is only available for certain methods, set it up here. Leave blank to enable for all methods.', 'woocommerce'),
+					'description'       => __('If M-PESA is only available for certain methods, set it up here. Leave blank to enable for all methods.', 'woocommerce'),
 					'options'           => $shipping_methods,
 					'desc_tip'          => true,
 					'custom_attributes' => array(
