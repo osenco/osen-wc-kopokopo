@@ -74,19 +74,23 @@ add_action('wp', function() {
 
             update_post_meta($post_id, '_transaction', $internal_transaction_id);
             update_post_meta($post_id, '_timestamp', $transaction_timestamp);
+            update_post_meta($post_id, '_receipt', $transaction_reference);
             update_post_meta($post_id, '_amount', $amount);
             update_post_meta($post_id, '_customer', $first_name.' '.$middle_name.' '.$last_name);
             update_post_meta($post_id, '_phone', $sender_phone);
             update_post_meta($post_id, '_account_number', $account_number);
-
+            
             $order_id = get_post_meta($post_id, 'order_id', true);
             $order = wc_get_order($order_id);
             
-            if ((int)$amount >= $order->get_total()) {
-                $order->add_order_note(__("FULLY PAID: Payment of $currency $amount from $first_name $middle_name $last_name, phone number $sender_phone and MPESA reference $transaction_reference confirmed by KopoKopo", 'woocommerce'));
-                $order->payment_complete();
-            } else {
-                $order->add_order_note(__("PARTLY PAID: Received $currency $amount from $first_name $middle_name $last_name, phone number $sender_phone and MPESA reference $transaction_reference", 'woocommerce'));
+            if ($transaction_reference == get_post_meta($post_id, '_reference', true)){
+                if ((int)$amount >= $order->get_total()) {
+                    update_post_meta($post_id, '_order_status', 'complete');
+                    $order->add_order_note(__("FULLY PAID: Payment of $currency $amount from $first_name $middle_name $last_name, phone number $sender_phone and MPESA reference $transaction_reference confirmed by KopoKopo", 'woocommerce'));
+                    $order->payment_complete();
+                } else {
+                    $order->add_order_note(__("PARTLY PAID: Received $currency $amount from $first_name $middle_name $last_name, phone number $sender_phone and MPESA reference $transaction_reference", 'woocommerce'));
+                }
             }
 
             $response = array(
@@ -105,3 +109,48 @@ add_action('wp', function() {
         exit(wp_send_json($response));
     }
 });
+
+add_action('init', function(){
+	if (isset($_GET['kopoipncheck'])) {
+		$response = array('receipt' => '');
+
+		if (!empty($_GET['order'])) {
+			$post = kopokopo_post_id_by_meta_key_and_value('_order_id', $_GET['order']);
+			$response = array(
+				'receipt' 	=> get_post_meta($post, '_receipt', true)
+			);
+		}
+
+		exit(wp_send_json($response));
+	}
+});
+
+add_action('wp_footer', 'kopo_ajax_polling');
+function kopo_ajax_polling()
+{ ?>
+	<script id="kopoipn_kopochecker">
+		var kopochecker = setInterval(() => {
+			if (document.getElementById("payment_method") !== null && document.getElementById("payment_method")
+				.value !== 'kopokopo') {
+				clearInterval(kopochecker);
+			}
+
+			jQuery(function($) {
+				var order = $("#current_order").val();
+				if (order !== undefined || order == '') {
+					$.get('<?php echo home_url('?kopoipncheck&order='); ?>' + order, [], function(data) {
+						if (data.receipt == '' || data.receipt == 'N/A') {
+							$("#kopokopo_receipt").html('Confirming payment <span>.</span><span>.</span><span>.</span><span>.</span><span>.</span><span>.</span>');
+						} else {
+							$(".woocommerce-order-overview").append('<li class="woocommerce-order-overview__payment-method method">Receipt number: <strong>' + data.receipt + '</strong></li>');
+							$(".woocommerce-table--order-details > tfoot").find('tr:last-child').prev().after('<tr><th scope="row">Receipt number:</th><td>' + data.receipt +'</td></tr>');
+							$("#kopokopo_receipt").html('Payment confirmed. Receipt number: <b>' + data.receipt + '</b>');
+							clearInterval(kopochecker);
+							return false;
+						}
+					})
+				}
+			});
+		}, 3000);
+	</script><?php
+}

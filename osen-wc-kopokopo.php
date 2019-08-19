@@ -112,24 +112,26 @@ function kopokopo_init() {
 			$this->id = "kopokopo";
 
 			// Show Title
-			$this->method_title = __("KopoKopo Lipa Na MPESA", 'kopokopo');
+			$this->method_title = __("Lipa Na M-PESA via KopoKopo", 'kopokopo');
 
 			// Show Description
-			$this->method_description = __('<p>Log into your <a href="https://app.kopokopo.com" target="_blank">KopoKopo Account</a> and configure as follows:</p>
+			$this->method_description = ($this->get_option('enabled') == 'yes') 
+				? 'Receive payments using your Kopokopo Till Number' 
+				: __('<p>Log into your <a href="https://app.kopokopo.com" target="_blank">KopoKopo Account</a> and configure as follows:</p>
             <ol>
                 <li>Go to Settings > API Settings</li>
                 <li>Make sure that "Transaction Push" block is set to "HTTP POST"</li>
                 <li>Configure "HTTP(S) POST Configuration"</li>
                 <ol>
                     <li>Set API version to "v3"</li>
-                    <li>Set Notification URL to <code><b>'. home_url("kopokopo_reconcile") .'</b></code></li>
+                    <li>Set Notification URL to <code id="kopokopo_ipn_url" title="Click to copy"><b>'. home_url("kopokopo_reconcile") .'</b></code></li>
                 </ol>
                 <li>Make sure everything is saved</li>
             </ol>
 			<p>Copy your API key and paste it below</p>', 'kopokopo');
 
 			// vertical tab title
-			$this->title = __("Lipa Na MPESA", 'kopokopo');
+			$this->title = __("Lipa Na M-PESA", 'kopokopo');
 
 			// Add Gateway Icon
 			$this->icon = apply_filters('woocommerce_mpesa_icon', plugins_url('inc/KopoKopo.png', __FILE__));
@@ -175,19 +177,19 @@ function kopokopo_init() {
 					'title'			=> __('Method Title', 'kopokopo'),
 					'type'			=> 'text',
 					'desc_tip'		=> __('Payment title of checkout process.', 'kopokopo'),
-					'default'		=> __('Lipa Na MPESA(KopoKopo)', 'kopokopo'),
+					'default'		=> __('Lipa Na M-PESA', 'kopokopo'),
 				),
 				'shortcode' 		=> array(
 					'title'			=> __('KopoKopo Till Number', 'kopokopo'),
 					'type'			=> 'text',
 					'desc_tip'		=> __('This is the Till number provided by KopoKopo when you signed up for an account.', 'kopokopo'),
-					'default' 		=> '123456'
+					'default' 		=> ''
 				),
 				'api_key' 			=> array(
 					'title'			=> __('KopoKopo API Key', 'kopokopo'),
 					'type'			=> 'text',
 					'desc_tip'		=> __('This is the API Key provided by KopoKopo from your account dashboard.', 'kopokopo'),
-					'default' 		=> '05a9907dec40e9a24b693a53f04a77e83329048e'
+					'default' 		=> ''
 				),
 				'enable_for_methods' => array(
 					'title'             => __('Enable for shipping methods', 'woocommerce'),
@@ -204,7 +206,7 @@ function kopokopo_init() {
 				),
                 'enable_for_virtual' => array(
                     'title' => __('Accept for virtual orders', 'woocommerce'),
-                    'label' => __('Accept KopoKopo Lipa na MPESA if the order is virtual', 'woocommerce'),
+                    'label' => __('Accept Lipa na M-PESA if the order is virtual', 'woocommerce'),
                     'type' => 'checkbox',
                     'default' => 'yes'
                 ),
@@ -222,7 +224,7 @@ function kopokopo_init() {
 		public function process_payment($order_id)
         {
             $order = wc_get_order($order_id);
-            $order->update_status('pending', __('Waiting to verify MPESA payment.', 'woocommerce'));
+            $order->update_status('pending', __('Waiting to verify M-PESA payment.', 'woocommerce'));
             $order->reduce_order_stock();
             WC()->cart->empty_cart();
             $order->add_order_note("Awaiting payment confirmation from Kopokopo");
@@ -241,6 +243,7 @@ function kopokopo_init() {
 			update_post_meta($post_id, '_transaction', $order_id );
             update_post_meta($post_id, '_reference', $_POST['reference']);
             update_post_meta($post_id, '_amount', round($amount));
+			update_post_meta($post_id, '_order_status', 'on-hold');
 
             return array(
                 'result' => 'success',
@@ -250,15 +253,15 @@ function kopokopo_init() {
 
 		public function payment_fields() { ?>
 			<p class="form-row form-row-wide">
-					On your Safaricom phone go the M-PESA menu.<br>
-					Select Lipa Na M-PESA and then select Buy Goods and Services<br>
-					Enter the Till Number <b><?php echo $this->shortcode; ?></b><br>
-					Enter exactly <b><?php echo round(WC()->cart->total); ?></b> as the amount due<br>
-					Follow subsequent prompts to complete the transaction.<br>
-					You will receive a confirmation SMS from M-PESA with a Confirmation Code.<br>
-					Please input the confirmation code below.<br><br>
+				<?php _e('On your Safaricom phone go the M-PESA menu.', 'woocommerce'); ?><br>
+				<?php _e('Select Lipa Na M-PESA and then Buy Goods and Services', 'woocommerce'); ?><br>
+				<?php _e('Enter the Till Number <b>'.$this->shortcode.'</b>', 'woocommerce'); ?><br>
+				<?php _e('Enter exactly <b>'.round(WC()->cart->total).'</b> as the amount due', 'woocommerce'); ?><br>
+				<?php _e('Follow subsequent prompts to complete the transaction.', 'woocommerce'); ?><br>
+				<?php _e('You will receive a confirmation SMS from M-PESA with a Confirmation Code.', 'woocommerce'); ?><br>
+				<?php _e('Please input the confirmation code below.', 'woocommerce'); ?><br><br>
 
-				<input class="input-text" required="required" name="reference" type="text" autocomplete="off" placeholder="Enter Code e.g NCE6UUNJS6">
+				<input class="input-text form-control" required="required" name="reference" type="text" autocomplete="off" placeholder="Enter Code e.g NCE6UUNJS6">
 			</p><?php
 		}
 		
