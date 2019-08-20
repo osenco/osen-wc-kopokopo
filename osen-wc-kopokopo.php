@@ -90,6 +90,24 @@ function kopokopo_action_links($links)
 	);
 }
 
+add_action('admin_footer', function(){
+	?>
+	<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+	<script>
+		var copy = document.getElementById('kopokopo_ipn_url');
+    	var clipboard = new ClipboardJS(copy);
+
+		clipboard.on('success', function(e) {
+			jQuery('#kopokopo_ipn_url').after('<span style="color: green; padding-left: 2px;">Copied!</span>');
+		});
+		
+		clipboard.on('error', function(e) {
+			console.log(e);
+		});
+	</script>
+	<?php
+});
+
 /*
  * Register our gateway with woocommerce
  */
@@ -112,7 +130,7 @@ function kopokopo_init() {
 			$this->id = "kopokopo";
 
 			// Show Title
-			$this->method_title = __("Lipa Na M-PESA via KopoKopo", 'kopokopo');
+			$this->method_title = __("Lipa Na M-PESA via KopoKopo", 'woocommerce');
 
 			// Show Description
 			$this->method_description = ($this->get_option('enabled') == 'yes') 
@@ -124,14 +142,14 @@ function kopokopo_init() {
                 <li>Configure "HTTP(S) POST Configuration"</li>
                 <ol>
                     <li>Set API version to "v3"</li>
-                    <li>Set Notification URL to <code id="kopokopo_ipn_url" title="Click to copy"><b>'. home_url("kopokopo_reconcile") .'</b></code></li>
+                    <li>Set Notification URL to <code title="Click to copy"><b id="kopokopo_ipn_url" data-clipboard-text="'.home_url("kopokopo_reconcile").'">'. home_url("kopokopo_reconcile") .'</b></code></li>
                 </ol>
                 <li>Make sure everything is saved</li>
             </ol>
-			<p>Copy your API key and paste it below</p>', 'kopokopo');
+			<p>Copy your API key and paste it below</p>', 'woocommerce');
 
 			// vertical tab title
-			$this->title = __("Lipa Na M-PESA", 'kopokopo');
+			$this->title = __("Lipa Na M-PESA", 'woocommerce');
 
 			// Add Gateway Icon
 			$this->icon = apply_filters('woocommerce_mpesa_icon', plugins_url('inc/KopoKopo.png', __FILE__));
@@ -168,27 +186,27 @@ function kopokopo_init() {
 
 			$this->form_fields = array(
 				'enabled' 			=> array(
-					'title'			=> __('Enable/Disable', 'kopokopo'),
-					'label'			=> __('Enable this payment gateway', 'kopokopo'),
+					'title'			=> __('Enable/Disable', 'woocommerce'),
+					'label'			=> __('Enable this payment gateway', 'woocommerce'),
 					'type'			=> 'checkbox',
 					'default'		=> 'no',
 				),
 				'title' 			=> array(
-					'title'			=> __('Method Title', 'kopokopo'),
+					'title'			=> __('Method Title', 'woocommerce'),
 					'type'			=> 'text',
-					'desc_tip'		=> __('Payment title of checkout process.', 'kopokopo'),
-					'default'		=> __('Lipa Na M-PESA', 'kopokopo'),
+					'desc_tip'		=> __('Payment title of checkout process.', 'woocommerce'),
+					'default'		=> __('Lipa Na M-PESA', 'woocommerce'),
 				),
 				'shortcode' 		=> array(
-					'title'			=> __('KopoKopo Till Number', 'kopokopo'),
+					'title'			=> __('KopoKopo Till Number', 'woocommerce'),
 					'type'			=> 'text',
-					'desc_tip'		=> __('This is the Till number provided by KopoKopo when you signed up for an account.', 'kopokopo'),
+					'desc_tip'		=> __('This is the Till number provided by KopoKopo when you signed up for an account.', 'woocommerce'),
 					'default' 		=> ''
 				),
 				'api_key' 			=> array(
-					'title'			=> __('KopoKopo API Key', 'kopokopo'),
+					'title'			=> __('KopoKopo API Key', 'woocommerce'),
 					'type'			=> 'text',
-					'desc_tip'		=> __('This is the API Key provided by KopoKopo from your account dashboard.', 'kopokopo'),
+					'desc_tip'		=> __('This is the API Key provided by KopoKopo from your account dashboard.', 'woocommerce'),
 					'default' 		=> ''
 				),
 				'enable_for_methods' => array(

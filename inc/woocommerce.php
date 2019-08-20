@@ -10,7 +10,6 @@ function wc_kopo_add_content_thankyou_kopokopo($order_id) {
 
 	<style>
 		@keyframes wave {
-
 			0%,
 			60%,
 			100% {
