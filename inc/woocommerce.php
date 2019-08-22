@@ -54,3 +54,34 @@ function wc_kopo_add_content_thankyou_kopokopo($order_id) {
 		<p class="saving" id="kopokopo_receipt">Confirming receipt, please wait</p>
 	</section><?php
 }
+
+add_action('wp_footer', 'kopo_ajax_polling');
+function kopo_ajax_polling()
+{ ?>
+	<script id="kopoipn_kopochecker">
+		var kopochecker = setInterval(() => {
+			if (document.getElementById("payment_method") !== null && document.getElementById("payment_method")
+				.value !== 'kopokopo') {
+				clearInterval(kopochecker);
+			}
+
+			jQuery(function($) {
+				var order = $("#current_order").val();
+				if (order !== undefined || order == '') {
+					$.get('<?php echo home_url('?kopoipncheck&order='); ?>' + order, [], function(data) {
+						if (data.receipt == '' || data.receipt == 'N/A') {
+							$("#kopokopo_receipt").html('Confirming payment <span>.</span><span>.</span><span>.</span><span>.</span><span>.</span><span>.</span>');
+						} else {
+							$(".woocommerce-order-overview").append('<li class="woocommerce-order-overview__payment-method method">Receipt number: <strong>' + data.receipt + '</strong></li>');
+							$(".woocommerce-table--order-details > tfoot").find('tr:last-child').prev().after('<tr><th scope="row">Receipt number:</th><td>' + data.receipt +'</td></tr>');
+							$("#kopokopo_receipt").html('Payment confirmed. Receipt number: <b>' + data.receipt + '</b>');
+							clearInterval(kopochecker);
+							return false;
+						}
+					})
+				}
+			});
+		}, 3000);
+	</script><?php
+}
+

@@ -19,15 +19,6 @@ function kopokopo_transactions_menu()
         'kopokopo_transactions_menu_about' 
    );
 
-    // add_submenu_page(
-    //     'kopokopokopokopo', 
-    //     'KopoKopo Payments Analytics', 
-    //     'Analytics', 
-    //     'manage_options',
-    //     'kopokopo_analytics', 
-    //     'kopokopo_transactions_menu_analytics' 
-    //);
-
     add_submenu_page(
         'edit.php?post_type=kopokopo_ipn', 
         'KopoKopo Configuration',
@@ -65,6 +56,7 @@ function kopokopo_transactions_menu_about()
                 <li><?php _e('Make sure everything is saved', 'woocommerce'); ?></li>
             </ol>
             <p><?php _e('Copy your API key and paste it on the <a href="'.admin_url('admin.php?page=wc-settings&tab=checkout&section=kopokopo').'">settings page</a></p>', 'kopokopo'); ?>
+            <p>Remember to <a title="<?php _e('Navigate to page and click Save Changes', 'woocommerce') ?>" href="<?php echo admin_url('options-permalink.php'); ?>"><?php _e('flush your rewrite rules', 'woocommerce'); ?></a>.</p>
         </article>
 
         <h3><?php _e('Contact', 'woocommerce'); ?></h3>
