@@ -131,12 +131,8 @@ function kopokopo_init()
         function __construct()
         {
             // global ID
-            $this->id = "kopokopo";
-
-            // Show Title
-            $this->method_title = __("Lipa Na M-PESA via KopoKopo", 'woocommerce');
-
-            // Show Description
+            $this->id                 = "kopokopo";
+            $this->method_title       = __("Lipa Na M-PESA via KopoKopo", 'woocommerce');
             $this->method_description = ($this->get_option('enabled') == 'yes')
             ? 'Receive payments using your Kopokopo Till Number'
             : __('<p>Log into your <a href="https://app.kopokopo.com" target="_blank">KopoKopo Account</a> and configure as follows:</p>
@@ -276,7 +272,7 @@ function kopokopo_init()
         }
 
         public function payment_fields()
-        { ?>
+        {?>
 			<p class="form-row form-row-wide">
 				<?php _e('On your Safaricom phone go the M-PESA menu.', 'woocommerce');?><br>
 				<?php _e('Select Lipa Na M-PESA and then Buy Goods and Services', 'woocommerce');?><br>
@@ -288,7 +284,7 @@ function kopokopo_init()
 
 				<input class="input-text form-control" required="required" name="reference" type="text" autocomplete="off" placeholder="Enter Code e.g NCE6UUNJS6">
 			</p><?php
-        }
+}
 
         // Validate OTP
         public function validate_fields()

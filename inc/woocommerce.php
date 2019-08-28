@@ -1,7 +1,7 @@
 <?php
 add_action( 'woocommerce_thankyou_kopokopo', 'wc_kopo_add_content_thankyou_kopokopo' );
-function wc_kopo_add_content_thankyou_kopokopo($order_id) {
-
+function wc_kopo_add_content_thankyou_kopokopo($order_id) 
+{
     $order = wc_get_order($order_id);
 
 	if ($order->get_payment_method() !== 'kopokopo'){
@@ -60,14 +60,13 @@ function kopo_ajax_polling()
 { ?>
 	<script id="kopoipn_kopochecker">
 		var kopochecker = setInterval(() => {
-			if (document.getElementById("payment_method") !== null && document.getElementById("payment_method")
-				.value !== 'kopokopo') {
+			if (document.getElementById("payment_method") !== null && document.getElementById("payment_method").value !== 'kopokopo') {
 				clearInterval(kopochecker);
 			}
 
 			jQuery(function($) {
 				var order = $("#current_order").val();
-				if (order !== undefined || order == '') {
+				if (order !== undefined || order !== '') {
 					$.get('<?php echo home_url('?kopoipncheck&order='); ?>' + order, [], function(data) {
 						if (data.receipt == '' || data.receipt == 'N/A') {
 							$("#kopokopo_receipt").html('Confirming payment <span>.</span><span>.</span><span>.</span><span>.</span><span>.</span><span>.</span>');
@@ -84,4 +83,3 @@ function kopo_ajax_polling()
 		}, 3000);
 	</script><?php
 }
-

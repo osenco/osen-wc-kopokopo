@@ -23,15 +23,14 @@ add_filter('query_vars', function ($query_vars) {
     return $query_vars;
 });
 
-add_action('wp', function () {
+add_action('template_redirect', function () {
     if (get_query_var('kopokopo_reconcile')) {
+        header("Access-Control-Allow-Origin: *");
+        header("Content-Type: Application/json");
+
         $kopokopo_gateway = new WC_Kopokopo_Gateway();
         $shortcode        = $kopokopo_gateway->get_option('shortcode');
         $api_key          = $kopokopo_gateway->get_option('api_key');
-
-        $response = array(
-            "status" => "03", // invalid
-        );
 
         // Get all the fields from the post request
         $input = file_get_contents('php://input');
@@ -70,6 +69,7 @@ add_action('wp', function () {
             $sender_phone            = $data['sender_phone'];
             $currency                = $data['currency'];
             $account_number          = $data['account_number'];
+            $amount                  = round($amount);
 
             // Get payment by reference and update details
             $post_id = kopokopo_post_id_by_meta_key_and_value('_reference', $transaction_reference);
@@ -82,7 +82,7 @@ add_action('wp', function () {
             update_post_meta($post_id, '_phone', $sender_phone);
             update_post_meta($post_id, '_account_number', $account_number);
 
-            $order_id = get_post_meta($post_id, 'order_id', true);
+            $order_id = get_post_meta($post_id, '_order_id', true);
             $order    = wc_get_order($order_id);
 
             if ($transaction_reference == get_post_meta($post_id, '_reference', true)) {
@@ -90,15 +90,17 @@ add_action('wp', function () {
                     update_post_meta($post_id, '_order_status', 'complete');
                     $order->add_order_note(__("FULLY PAID: Payment of $currency $amount from $first_name $middle_name $last_name, phone number $sender_phone and MPESA reference $transaction_reference confirmed by KopoKopo", 'woocommerce'));
                     $order->payment_complete();
+                    $order->update_status( 'completed' );
                 } else {
                     $order->add_order_note(__("PARTLY PAID: Received $currency $amount from $first_name $middle_name $last_name, phone number $sender_phone and MPESA reference $transaction_reference", 'woocommerce'));
+                    $order->update_status( 'processing' );
                 }
             }
 
             $response = array(
                 "status"             => "01",
-                "description"        => "Accepted",
-                "subscriber_message" => "Payment of {$currency} {$amount} for Order #{$order_id} to " . getbloginfo('name') . " received.",
+                "description"        => "Reconciliation processed",
+                "subscriber_message" => "Payment of {$currency} {$amount} for Order #{$order_id} to " . get_bloginfo('name') . " received.",
             );
         } else {
             $response = array(
@@ -124,5 +126,30 @@ add_action('init', function () {
         }
 
         exit(wp_send_json($response));
+        // $data = array(
+        //     "service_name" => "MPESA",
+        //     "business_number" => "892309",
+        //     "transaction_reference" => "NHUIODUSAA",
+        //     "internal_transaction_id" => 3222,
+        //     "transaction_timestamp" => "2019-04-21T13:57:00Z",
+        //     "transaction_type" => "Till",
+        //     "account_number" => "445534",
+        //     "sender_phone" => "0768904639",
+        //     "first_name" => "John",
+        //     "middle_name" => "K",
+        //     "last_name" => "Doe",
+        //     "amount" => 1,
+        //     "currency" => "KES"
+        // );
+        // ksort($data);
+
+        // $b = array();
+        // foreach ($data as $key => $value) {
+        // $b[] = $key . '=' . $value;
+        // }
+        // sort($b);
+
+        // $base_string       = implode('&', $b);
+        // echo base64_encode(hash_hmac("sha1", $base_string, '7bc21e95a0bab4e2f4765bc84bc2b1a050943691', true));
     }
 });

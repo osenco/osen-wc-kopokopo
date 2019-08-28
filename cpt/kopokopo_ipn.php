@@ -10,7 +10,6 @@
 add_action('init', 'kopokopo_custom_post_type', 0);
 function kopokopo_custom_post_type()
 {
-
     $labels = array(
         'name'                  => _x('KopoKopo Payments', 'Post Type General Name', 'kopokopo'),
         'singular_name'         => _x('Payment', 'Post Type Singular Name', 'kopokopo'),
@@ -40,6 +39,7 @@ function kopokopo_custom_post_type()
         'items_list_navigation' => __('Items list navigation', 'kopokopo'),
         'filter_items_list'     => __('Filter items list', 'kopokopo'),
     );
+
     $args = array(
         'label'               => __('Payment', 'kopokopo'),
         'description'         => __('KopoKopo Payments IPN', 'kopokopo'),
@@ -61,8 +61,8 @@ function kopokopo_custom_post_type()
         'capabilities'        => array('create_posts' => false, 'edit_posts' => true, 'delete_post' => true),
         'map_meta_cap'        => true,
     );
+    
     register_post_type('kopokopo_ipn', $args);
-
 }
 
 /**
@@ -113,7 +113,7 @@ function kopokopo_payments_table_column_content($column_id, $post_id)
             break;
 
         case 'reference':
-            echo ($value = get_post_meta($post_id, '_reference', true)) ? $value : "N/A";
+            echo ($value = get_post_meta($post_id, '_receipt', true)) ? $value : "N/A";
             break;
 
         case 'transaction':
