@@ -2,7 +2,7 @@
 /**
  * @package KopoKopo For WooCommerce
  * @subpackage Payments CPT
- * @author Mauko Maunde < hi@mauko.co.ke >
+ * @author Osen Concepts < hi@osen.co.ke >
  * @since 0.19.04
  */
 

@@ -2,13 +2,13 @@
 /**
  * @package KopoKopo For WooCommerce
  * @subpackage Plugin File
- * @author Mauko Maunde < hi@mauko.co.ke >
+ * @author Osen Concepts < hi@osen.co.ke >
  * @since 0.19.08
  *
  * Plugin Name: KopoKopo for WooCommerce
  * Plugin URI:  https://kopokopo.org
  * Description: This plugin extends WordPress and WooCommerce functionality to integrate Lipa Na M-PESA by Kopokopo for making and receiving online payments.
- * Version:     0.19.07
+ * Version:     0.19.10
  * Author:      Osen Concepts
  * Author URI:  https://osen.co.ke/
  * License:     GPL2
@@ -42,10 +42,6 @@ function wc_kopokopo_activation_check()
     if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')))) {
         deactivate_plugins(plugin_basename(__FILE__));
         exit('Please Install/Activate WooCommerce for the KopoKopo extension to work');
-    }
-
-    if (!is_plugin_active('woocommerce/woocommerce.php')) {
-        deactivate_plugins(plugin_basename(__FILE__));
     }
 }
 
@@ -118,6 +114,23 @@ function kopokopo_add_to_gateways($gateways)
 {
     $gateways[] = 'WC_Kopokopo_Gateway';
     return $gateways;
+}
+
+if (!function_exists('kopo_post_id_by_meta_key_and_value')) {
+    function kopo_post_id_by_meta_key_and_value($key, $value)
+    {
+        global $wpdb;
+        $meta = $wpdb->get_results("SELECT * FROM `" . $wpdb->postmeta . "` WHERE meta_key='" . $key . "' AND meta_value='" . $value . "'");
+        if (is_array($meta) && !empty($meta) && isset($meta[0])) {
+            $meta = $meta[0];
+        }
+
+        if (is_object($meta)) {
+            return $meta->post_id;
+        } else {
+            return false;
+        }
+    }
 }
 
 // Define Gateway Class
@@ -224,6 +237,12 @@ function kopokopo_init()
                         'data-placeholder' => __('Select shipping methods', 'woocommerce'),
                     ),
                 ),
+                'input'              => array(
+                    'title'   => __('Enable User Input', 'woocommerce'),
+                    'label'   => __('Have customers manually enter transaction code during checkout.', 'woocommerce'),
+                    'type'    => 'checkbox',
+                    'default' => 'no',
+                ),
                 'enable_for_virtual' => array(
                     'title'   => __('Accept for virtual orders', 'woocommerce'),
                     'label'   => __('Accept Lipa na M-PESA if the order is virtual', 'woocommerce'),
@@ -243,27 +262,67 @@ function kopokopo_init()
         // Response handled for payment gateway
         public function process_payment($order_id)
         {
-            $order = wc_get_order($order_id);
+            $currency = get_woocommerce_currency_symbol();
+            $order    = wc_get_order($order_id);
+            $phone    = $order->get_billing_phone();
+            $phone    = preg_replace('/^0/', '254', str_replace("+", "", $phone));
+            $phone    = "+{$phone}";
+
+            $reference = isset($_POST['reference']) ? strip_tags(trim($_POST['reference'])) : '';
+
             $order->update_status('pending', __('Waiting to verify M-PESA payment.', 'woocommerce'));
-            $order->reduce_order_stock();
+            $order->wc_reduce_stock_levels();
             WC()->cart->empty_cart();
             $order->add_order_note("Awaiting payment confirmation from Kopokopo");
+
             // Insert the payment into the database
+            if ($this->get_option('input') == 'yes') {
+                $post_id = kopo_post_id_by_meta_key_and_value('_reference', trim($reference));
+            } else {
+                $post_id = kopo_post_id_by_meta_key_and_value('_phone', trim($phone));
+            }
 
-            $post_id = wp_insert_post(
-                array(
-                    'post_title'  => 'Order ' . time(),
-                    'post_status' => 'publish',
-                    'post_type'   => 'kopokopo_ipn',
-                    'post_author' => is_user_logged_in() ? get_current_user_id() : 1,
-                )
-            );
+            // global $woocommerce;
+            // $order = new WC_Order($order_id);
+            // if ($order !== false) {
+            //     if ((int) $amount >= $order->get_total()) {
+            //         $order->add_order_note(__("FULLY PAID: Payment of $currency $amount from $first_name $middle_name $last_name, phone number $sender_phone and MPESA reference $transaction_reference confirmed by KopoKopo", 'woocommerce'));
+            //         $order->update_status('completed');
+            //     } else {
+            //         $order->add_order_note(__("PARTLY PAID: Received $currency $amount from $first_name $middle_name $last_name, phone number $sender_phone and MPESA reference $transaction_reference", 'woocommerce'));
+            //         $order->update_status('processing');
+            //     }
+            // }
 
-            update_post_meta($post_id, '_order_id', $order_id);
-            update_post_meta($post_id, '_transaction', $order_id);
-            update_post_meta($post_id, '_reference', trim($_POST['reference']));
-            update_post_meta($post_id, '_amount', round($amount));
-            update_post_meta($post_id, '_order_status', 'on-hold');
+            if (!$post_id) {
+                $post_id = wp_insert_post(
+                    array(
+                        'post_title'  => 'Order ' . time(),
+                        'post_status' => 'publish',
+                        'post_type'   => 'kopokopo_ipn',
+                        'post_author' => is_user_logged_in() ? get_current_user_id() : 1,
+                    )
+                );
+
+                update_post_meta($post_id, '_order_id', $order_id);
+                update_post_meta($post_id, '_phone', $phone);
+                update_post_meta($post_id, '_transaction', $order_id);
+                update_post_meta($post_id, '_reference', $reference);
+                update_post_meta($order_id, '_mpesa_reference', $reference);
+                update_post_meta($post_id, '_amount', round($amount));
+                update_post_meta($post_id, '_order_status', 'on-hold');
+            } else {
+                update_post_meta($post_id, '_order_id', $order_id);
+                $amount                = get_post_meta($post_id, '_amount', true);
+                $transaction_reference = get_post_meta($post_id, '_reference', true);
+                if ((int) $amount >= $order->get_total()) {
+                    $order->add_order_note(__("FULLY PAID: Payment of $currency $amount from " . strip_tags(trim($_POST['phone'])) . " and MPESA reference $transaction_reference confirmed by KopoKopo", 'woocommerce'));
+                    $order->update_status('completed');
+                } else {
+                    $order->add_order_note(__("PARTLY PAID: Received $currency $amount from " . strip_tags(trim($_POST['phone'])) . " and MPESA reference $transaction_reference", 'woocommerce'));
+                    $order->update_status('processing');
+                }
+            }
 
             return array(
                 'result'   => 'success',
@@ -279,20 +338,22 @@ function kopokopo_init()
 				<?php _e('Enter the Till Number <b>' . $this->shortcode . '</b>', 'woocommerce');?><br>
 				<?php _e('Enter exactly <b>' . round(WC()->cart->total) . '</b> as the amount due', 'woocommerce');?><br>
 				<?php _e('Follow subsequent prompts to complete the transaction.', 'woocommerce');?><br>
-				<?php _e('You will receive a confirmation SMS from M-PESA with a Confirmation Code.', 'woocommerce');?><br>
-				<?php _e('Please input the confirmation code below.', 'woocommerce');?><br><br>
+                <?php if ($this->get_option('input', 'no') == 'yes'): ?>
+                    <?php _e('You will receive an SMS from M-PESA with a Confirmation Code.', 'woocommerce');?><br>
+                    <?php _e('Please input the Confirmation Code below.', 'woocommerce');?><br><br>
 
-				<input class="input-text form-control" required="required" name="reference" type="text" autocomplete="off" placeholder="Enter Code e.g NCE6UUNJS6">
+                    <input class="input-text form-control" required="required" name="reference" type="text" autocomplete="off" placeholder="Enter Code e.g NCE6UUNJS6">
+                <?php endif;?>
 			</p><?php
 }
 
         // Validate OTP
         public function validate_fields()
         {
-            if (empty($_POST['reference'])) {
-                wc_add_notice('Confirmation Code is required!', 'error');
-                return false;
-            }
+            // if (empty($_POST['reference'])) {
+            //     wc_add_notice('Confirmation Code is required!', 'error');
+            //     return false;
+            // }
 
             return true;
         }
