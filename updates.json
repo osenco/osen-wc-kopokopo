@@ -15,7 +15,7 @@
 	"sections": {
 		"description": "<p>This plugin seeks to provide a simple plug-n-play implementation for integrating M-Pesa Payments into online stores built with WooCommerce and WordPress.</p>",
 		"installation": "Download the latest release from Github, and extract the zip file in your plugins directory of your WordPress instalation",
-		"changelog": "<ul><li>Auto updates enabled</li></ul>",
+		"changelog": "<ul><li>Auto updates enabled</li></ul>"
 	},
 	
 	"icons" : {
