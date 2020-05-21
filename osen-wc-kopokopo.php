@@ -9,7 +9,7 @@
  * Plugin Name: KopoKopo for WooCommerce
  * Plugin URI:  https://kopokopo.org
  * Description: This plugin extends WordPress and WooCommerce functionality to integrate Lipa Na M-PESA by Kopokopo for making and receiving online payments.
- * Version:     0.20.40
+ * Version:     1.20.5
  * Author:      Osen Concepts
  * Author URI:  https://osen.co.ke/
  * License:     GPL2
@@ -28,7 +28,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('KP_VER', '1.20.4');
+define('KP_VER', '1.20.5');
 if (!defined('KP_PLUGIN_FILE')) {
     define('KP_PLUGIN_FILE', __FILE__);
 }
