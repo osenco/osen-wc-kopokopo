@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package KopoKopo For WooCommerce
  * @subpackage Plugin File
@@ -8,7 +9,7 @@
  * Plugin Name: KopoKopo for WooCommerce
  * Plugin URI:  https://kopokopo.org
  * Description: This plugin extends WordPress and WooCommerce functionality to integrate Lipa Na M-PESA by Kopokopo for making and receiving online payments.
- * Version:     0.19.10
+ * Version:     0.20.40
  * Author:      Osen Concepts
  * Author URI:  https://osen.co.ke/
  * License:     GPL2
@@ -16,8 +17,9 @@
  * Text Domain: osen
  * Domain Path: /languages
  *
- * WC requires at least: 3.0.0
- * WC tested up to: 3.6.5
+ * 
+ * WC requires at least: 3.5.0
+ * WC tested up to: 4.0
  */
 
 // Exit if accessed directly.
@@ -26,7 +28,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('KP_VER', '1.19.08');
+define('KP_VER', '1.20.4');
 if (!defined('KP_PLUGIN_FILE')) {
     define('KP_PLUGIN_FILE', __FILE__);
 }
@@ -73,7 +75,9 @@ function wc_kopokopo_detect_woocommerce_deactivation($plugin, $network_activatio
 }
 
 // Flush Permalinks to avail IPN Endpoint /
-register_activation_hook(__FILE__, function () {flush_rewrite_rules();});
+register_activation_hook(__FILE__, function () {
+    flush_rewrite_rules();
+});
 
 // Add plugi links for Configuration, API Docs
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'kopokopo_action_links');
@@ -89,21 +93,21 @@ function kopokopo_action_links($links)
 }
 
 add_action('admin_footer', function () {
-    ?>
-	<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
-	<script>
-		var copy = document.getElementById('kopokopo_ipn_url');
-    	var clipboard = new ClipboardJS(copy);
+?>
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+    <script>
+        var copy = document.getElementById('kopokopo_ipn_url');
+        var clipboard = new ClipboardJS(copy);
 
-		clipboard.on('success', function(e) {
-			jQuery('#kopokopo_ipn_url').after('<span style="color: green; padding-left: 2px;">Copied!</span>');
-		});
+        clipboard.on('success', function(e) {
+            jQuery('#kopokopo_ipn_url').after('<span style="color: green; padding-left: 2px;">Copied!</span>');
+        });
 
-		clipboard.on('error', function(e) {
-			console.log(e);
-		});
-	</script>
-	<?php
+        clipboard.on('error', function(e) {
+            console.log(e);
+        });
+    </script>
+    <?php
 });
 
 /*
@@ -147,8 +151,8 @@ function kopokopo_init()
             $this->id                 = "kopokopo";
             $this->method_title       = __("Lipa Na M-PESA via KopoKopo", 'woocommerce');
             $this->method_description = ($this->get_option('enabled') == 'yes')
-            ? 'Receive payments using your Kopokopo Till Number'
-            : __('<p>Log into your <a href="https://app.kopokopo.com" target="_blank">KopoKopo Account</a> and configure as follows:</p>
+                ? 'Receive payments using your Kopokopo Till Number'
+                : __('<p>Log into your <a href="https://app.kopokopo.com" target="_blank">KopoKopo Account</a> and configure as follows:</p>
             <ol>
                 <li>Go to Settings > API Settings</li>
                 <li>Make sure that "Transaction Push" block is set to "HTTP POST"</li>
@@ -264,14 +268,16 @@ function kopokopo_init()
         {
             $currency = get_woocommerce_currency_symbol();
             $order    = wc_get_order($order_id);
-            $phone    = $order->get_billing_phone();
+            $total         = $order->get_total();
+            $phone         = $order->get_billing_phone();
             $phone    = preg_replace('/^0/', '254', str_replace("+", "", $phone));
             $phone    = "+{$phone}";
 
             $reference = isset($_POST['reference']) ? strip_tags(trim($_POST['reference'])) : '';
 
             $order->update_status('pending', __('Waiting to verify M-PESA payment.', 'woocommerce'));
-            $order->wc_reduce_stock_levels();
+            wc_reduce_stock_levels($order_id);
+
             WC()->cart->empty_cart();
             $order->add_order_note("Awaiting payment confirmation from Kopokopo");
 
@@ -281,18 +287,6 @@ function kopokopo_init()
             } else {
                 $post_id = kopo_post_id_by_meta_key_and_value('_phone', trim($phone));
             }
-
-            // global $woocommerce;
-            // $order = new WC_Order($order_id);
-            // if ($order !== false) {
-            //     if ((int) $amount >= $order->get_total()) {
-            //         $order->add_order_note(__("FULLY PAID: Payment of $currency $amount from $first_name $middle_name $last_name, phone number $sender_phone and MPESA reference $transaction_reference confirmed by KopoKopo", 'woocommerce'));
-            //         $order->update_status('completed');
-            //     } else {
-            //         $order->add_order_note(__("PARTLY PAID: Received $currency $amount from $first_name $middle_name $last_name, phone number $sender_phone and MPESA reference $transaction_reference", 'woocommerce'));
-            //         $order->update_status('processing');
-            //     }
-            // }
 
             if (!$post_id) {
                 $post_id = wp_insert_post(
@@ -309,7 +303,7 @@ function kopokopo_init()
                 update_post_meta($post_id, '_transaction', $order_id);
                 update_post_meta($post_id, '_reference', $reference);
                 update_post_meta($order_id, '_mpesa_reference', $reference);
-                update_post_meta($post_id, '_amount', round($amount));
+                update_post_meta($post_id, '_amount', round($total));
                 update_post_meta($post_id, '_order_status', 'on-hold');
             } else {
                 update_post_meta($post_id, '_order_id', $order_id);
@@ -331,56 +325,62 @@ function kopokopo_init()
         }
 
         public function payment_fields()
-        {?>
-			<p class="form-row form-row-wide">
-				<?php _e('On your Safaricom phone go the M-PESA menu.', 'woocommerce');?><br>
-				<?php _e('Select Lipa Na M-PESA and then Buy Goods and Services', 'woocommerce');?><br>
-				<?php _e('Enter the Till Number <b>' . $this->shortcode . '</b>', 'woocommerce');?><br>
-				<?php _e('Enter exactly <b>' . round(WC()->cart->total) . '</b> as the amount due', 'woocommerce');?><br>
-				<?php _e('Follow subsequent prompts to complete the transaction.', 'woocommerce');?><br>
-                <?php if ($this->get_option('input', 'no') == 'yes'): ?>
-                    <?php _e('You will receive an SMS from M-PESA with a Confirmation Code.', 'woocommerce');?><br>
-                    <?php _e('Please input the Confirmation Code below.', 'woocommerce');?><br><br>
+        { ?>
+            <p class="form-row form-row-wide">
+                <?php _e('On your Safaricom phone go the M-PESA menu.', 'woocommerce'); ?><br>
+                <?php _e('Select Lipa Na M-PESA and then Buy Goods and Services', 'woocommerce'); ?><br>
+                <?php _e('Enter the Till Number <b>' . $this->shortcode . '</b>', 'woocommerce'); ?><br>
+                <?php _e('Enter exactly <b>' . round(WC()->cart->total) . '</b> as the amount due', 'woocommerce'); ?><br>
+                <?php _e('Follow subsequent prompts to complete the transaction.', 'woocommerce'); ?><br>
+                <?php if ($this->get_option('input', 'no') == 'yes') : ?>
+                    <?php _e('You will receive an SMS from M-PESA with a Confirmation Code.', 'woocommerce'); ?><br>
+                    <?php _e('Please input the Confirmation Code below.', 'woocommerce'); ?><br><br>
 
-                    <input class="input-text form-control" required="required" name="reference" type="text" autocomplete="off" placeholder="Enter Code e.g NCE6UUNJS6">
-                <?php endif;?>
-			</p><?php
-}
+                    <input class="input-text form-control" required="required" name="reference" type="text" autocomplete="off" placeholder="Enter Code e.g OAE6UUNJS6">
+                <?php endif; ?>
+            </p><?php
+            }
 
-        // Validate OTP
-        public function validate_fields()
-        {
-            // if (empty($_POST['reference'])) {
-            //     wc_add_notice('Confirmation Code is required!', 'error');
-            //     return false;
-            // }
+            // Validate OTP
+            public function validate_fields()
+            {
+                // if (empty($_POST['reference'])) {
+                //     wc_add_notice('Confirmation Code is required!', 'error');
+                //     return false;
+                // }
 
-            return true;
-        }
+                return true;
+            }
 
-        /**
-         * Output for the order received page.
-         */
-        public function thankyou_page()
-        {
-            if ($this->instructions) {
-                echo wpautop(wptexturize($this->instructions));
+            /**
+             * Output for the order received page.
+             */
+            public function thankyou_page()
+            {
+                if ($this->instructions) {
+                    echo wpautop(wptexturize($this->instructions));
+                }
             }
         }
-
     }
-}
 
-/**
- * Load Extra Plugin Functions
- */
-foreach (glob(plugin_dir_path(__FILE__) . 'inc/*.php') as $filename) {
-    require_once $filename;
-}
+    /**
+     * Load Extra Plugin Functions
+     */
+    foreach (glob(plugin_dir_path(__FILE__) . 'inc/*.php') as $filename) {
+        require_once $filename;
+    }
 
-/**
- * Load Custom Post Type (KopoKopo Payments) Functionality
- */
-foreach (glob(plugin_dir_path(__FILE__) . 'cpt/*.php') as $filename) {
-    require_once $filename;
-}
+    /**
+     * Load Custom Post Type (KopoKopo Payments) Functionality
+     */
+    foreach (glob(plugin_dir_path(__FILE__) . 'cpt/*.php') as $filename) {
+        require_once $filename;
+    }
+
+    require __DIR__ . '/updates/plugin-update-checker.php';
+    $myUpdateChecker = Puc_v4_Factory::buildUpdateChecker(
+        'https://raw.githubusercontent.com/osenco/osen-wc-kopokopo/master/updates.json',
+        __FILE__,
+        'wc-kopokopo'
+    );
