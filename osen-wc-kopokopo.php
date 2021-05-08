@@ -22,6 +22,8 @@
  * WC tested up to: 4.0
  */
 
+use Osen\Kopokopo\Menu;
+
 // Exit if accessed directly.
 if (!defined('ABSPATH')) {
     exit;
@@ -32,6 +34,8 @@ define('KP_VER', '1.20.5');
 if (!defined('KP_PLUGIN_FILE')) {
     define('KP_PLUGIN_FILE', __FILE__);
 }
+
+require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
 
 // Deactivate plugin if WooCommerce is not active
 register_activation_hook(__FILE__, 'wc_kopokopo_activation_check');
@@ -338,45 +342,43 @@ function kopokopo_init()
 
                     <input class="input-text form-control" required="required" name="reference" type="text" autocomplete="off" placeholder="Enter Code e.g OAE6UUNJS6">
                 <?php endif; ?>
-            </p><?php
-            }
+            </p>
+<?php
+        }
 
-            // Validate OTP
-            public function validate_fields()
-            {
-                // if (empty($_POST['reference'])) {
-                //     wc_add_notice('Confirmation Code is required!', 'error');
-                //     return false;
-                // }
+        // Validate OTP
+        public function validate_fields()
+        {
+            // if (empty($_POST['reference'])) {
+            //     wc_add_notice('Confirmation Code is required!', 'error');
+            //     return false;
+            // }
 
-                return true;
-            }
+            return true;
+        }
 
-            /**
-             * Output for the order received page.
-             */
-            public function thankyou_page()
-            {
-                if ($this->instructions) {
-                    echo wpautop(wptexturize($this->instructions));
-                }
+        /**
+         * Output for the order received page.
+         */
+        public function thankyou_page()
+        {
+            if ($this->instructions) {
+                echo wpautop(wptexturize($this->instructions));
             }
         }
     }
+}
 
-    /**
-     * Load Extra Plugin Functions
-     */
-    foreach (glob(plugin_dir_path(__FILE__) . 'inc/*.php') as $filename) {
-        require_once $filename;
-    }
+/**
+ * Load Extra Plugin Functions
+ */
+foreach (glob(plugin_dir_path(__FILE__) . 'inc/*.php') as $filename) {
+    require_once $filename;
+}
 
-    /**
-     * Load Custom Post Type (KopoKopo Payments) Functionality
-     */
-    foreach (glob(plugin_dir_path(__FILE__) . 'cpt/*.php') as $filename) {
-        require_once $filename;
-    }
+function setup_plugin()
+{
+    new Menu();
 
     require __DIR__ . '/updates/plugin-update-checker.php';
     $myUpdateChecker = Puc_v4_Factory::buildUpdateChecker(
@@ -384,3 +386,6 @@ function kopokopo_init()
         __FILE__,
         'wc-kopokopo'
     );
+}
+
+setup_plugin();
